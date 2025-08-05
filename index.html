@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlockType</title>
+    <style>
+        body {
+            background-color: #282c34;
+            color: #abb2bf;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            transition: background-color 0.3s ease;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            text-align: center;
+            padding: 10px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        #game-area {
+            position: relative;
+            width: 100%;
+            height: 50px;
+            margin-bottom: 20px;
+            background-color: #3e4452;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+        
+        .track {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        #block {
+            position: absolute;
+            left: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            z-index: 10;
+            transition: transform 0.3s ease-out;
+            background-color: #61afef;
+            top: 50%;
+            transform: translateY(-50%);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .obstacle {
+            position: absolute;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background-color: #e06c75;
+            z-index: 5;
+        }
+        
+        #stats {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        #stats div {
+            background-color: #3e4452;
+            padding: 10px 20px;
+            border-radius: 8px;
+            flex-grow: 1;
+            min-width: 100px;
+        }
+        
+        #coins-display {
+            background-color: gold;
+            color: #282c34;
+            font-weight: bold;
+        }
+
+        #text-display {
+            font-size: 2em;
+            padding: 20px;
+            background-color: #3e4452;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            text-align: left;
+            user-select: none;
+            min-height: 150px;
+            overflow-y: auto;
+        }
+
+        #text-display .correct {
+            color: #61afef;
+        }
+
+        #text-display .incorrect {
+            color: #e06c75;
+            text-decoration: underline;
+        }
+
+        #text-display .current {
+            border-bottom: 2px solid #61afef;
+        }
+
+        #text-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.5em;
+            background-color: #3e4452;
+            color: #abb2bf;
+            border: none;
+            border-radius: 8px;
+            box-sizing: border-box;
+            caret-color: #61afef;
+        }
+
+        #text-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px #61afef;
+        }
+
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .button {
+            background-color: #61afef;
+            color: #282c34;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+            flex-grow: 1;
+        }
+
+        .button:hover {
+            background-color: #528cbf;
+        }
+
+        .button.active {
+            background-color: #e06c75;
+        }
+        
+        .modal {
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #3e4452;
+            color: #abb2bf;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            width: 80%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+        }
+
+        .modal-content button {
+            margin-top: 20px;
+        }
+
+        #custom-text-input {
+            width: 100%;
+            height: 150px;
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 1em;
+            background-color: #282c34;
+            color: #abb2bf;
+            border: 1px solid #61afef;
+            border-radius: 8px;
+            box-sizing: border-box;
+            resize: none;
+        }
+        
+        .shop-item, .plaza-item {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px;
+            background-color: #282c34;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 120px;
+            height: 120px;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .shop-item:hover, .plaza-item:hover {
+            transform: scale(1.05);
+        }
+        
+        .shop-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .avatar-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 4px;
+            margin: 0 auto;
+            margin-bottom: 10px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .plaza-item.active {
+            border: 2px solid #98c379;
+        }
+
+        /* Yeni: BlockTable CSS'i */
+        #block-table-modal .modal-content div {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #4b5262;
+        }
+        #block-table-modal .modal-content div:last-child {
+            border-bottom: none;
+        }
+        #block-table-modal .modal-content div span:first-child {
+            font-weight: bold;
+        }
+
+        /* --- Mobil Uyumluluk Ayarları --- */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            #stats {
+                flex-direction: column;
+            }
+
+            #stats div {
+                font-size: 1.2em;
+                min-width: unset;
+            }
+
+            #text-display {
+                font-size: 1.2em;
+                min-height: 120px;
+            }
+
+            #text-input {
+                font-size: 1.2em;
+            }
+
+            #controls {
+                flex-direction: column;
+            }
+
+            #game-area {
+                height: 40px;
+            }
+
+            #block {
+                width: 30px;
+                height: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>BlockType</h1>
+        <div id="game-area">
+            <div class="track">
+                <div id="block"></div>
+            </div>
+        </div>
+        <div id="stats">
+            <div id="wpm-display">WPM: 0</div>
+            <div id="coins-display">Coins: 0</div>
+            <div id="timer-display">Time: 0s</div>
+            <div id="accuracy-display">Accuracy: 100%</div>
+        </div>
+        <div id="text-display"></div>
+        <input type="text" id="text-input" autofocus autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Start typing here...">
+        <div id="controls">
+            <button id="restart-button" class="button">Restart (Esc)</button>
+            <button id="mode-button" class="button">Change Mode</button>
+            <button id="custom-text-button" class="button">Use Custom Text</button>
+            <button id="block-table-button" class="button">BlockTable</button>
+            <button id="shop-button" class="button">Avatar Shop</button>
+            <button id="plaza-button" class="button">Block Plaza</button>
+        </div>
+    </div>
+
+    <div id="mode-modal" class="modal">
+        <div class="modal-content">
+            <h2>Select Mode</h2>
+            <button id="endless-mode-button" class="button">Endless Mode</button>
+            <button id="timed-mode-button" class="button">Timed Mode (60s)</button>
+        </div>
+    </div>
+    
+    <div id="result-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Results</h2>
+            <p id="final-wpm"></p>
+            <p id="final-accuracy"></p>
+            <p id="coins-earned"></p>
+            <button id="show-block-table-from-results" class="button">Show BlockTable</button>
+            <button id="restart-from-results" class="button">Restart</button>
+        </div>
+    </div>
+    
+    <div id="custom-text-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Enter Your Own Text</h2>
+            <textarea id="custom-text-input" placeholder="Type or paste your text here..."></textarea>
+            <button id="start-custom-text-button" class="button">Start Practice</button>
+            <button id="cancel-custom-text-button" class="button">Cancel</button>
+        </div>
+    </div>
+
+    <div id="shop-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Avatar Shop</h2>
+            <p>Your Coins: <span id="shop-coins-display">0</span></p>
+            <div id="shop-items">
+                </div>
+            <button id="close-shop-button" class="button">Close</button>
+        </div>
+    </div>
+
+    <div id="plaza-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Block Plaza</h2>
+            <p>Your Coins: <span id="plaza-coins-display">0</span></p>
+            <div id="plaza-items">
+                </div>
+            <button id="close-plaza-button" class="button">Close</button>
+        </div>
+    </div>
+
+    <div id="custom-alert-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2 id="custom-alert-title"></h2>
+            <p id="custom-alert-message"></p>
+            <div id="custom-alert-buttons"></div>
+        </div>
+    </div>
+
+    <div id="block-table-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>BlockTable</h2>
+            <div><span>Current WPM:</span><span id="block-table-wpm">0</span></div>
+            <div><span>Accuracy:</span><span id="block-table-accuracy">100%</span></div>
+            <div><span>Correct Chars:</span><span id="block-table-correct-chars">0</span></div>
+            <div><span>Incorrect Chars:</span><span id="block-table-incorrect-chars">0</span></div>
+            <div><span>Total Coins:</span><span id="block-table-coins">0</span></div>
+            <button id="close-block-table-button" class="button">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const textDisplay = document.getElementById('text-display');
+        const textInput = document.getElementById('text-input');
+        const wpmDisplay = document.getElementById('wpm-display');
+        const timerDisplay = document.getElementById('timer-display');
+        const accuracyDisplay = document.getElementById('accuracy-display');
+        const coinsDisplay = document.getElementById('coins-display');
+        const restartButton = document.getElementById('restart-button');
+        const modeButton = document.getElementById('mode-button');
+        const customTextButton = document.getElementById('custom-text-button');
+        const shopButton = document.getElementById('shop-button');
+        const plazaButton = document.getElementById('plaza-button');
+        const block = document.getElementById('block');
+        const gameArea = document.getElementById('game-area');
+        
+        const modeModal = document.getElementById('mode-modal');
+        const endlessModeButton = document.getElementById('endless-mode-button');
+        const timedModeButton = document.getElementById('timed-mode-button');
+        
+        const resultModal = document.getElementById('result-modal');
+        const finalWPM = document.getElementById('final-wpm');
+        const finalAccuracy = document.getElementById('final-accuracy');
+        const coinsEarned = document.getElementById('coins-earned');
+        const restartFromResults = document.getElementById('restart-from-results');
+        
+        const customTextModal = document.getElementById('custom-text-modal');
+        const customTextInput = document.getElementById('custom-text-input');
+        const startCustomTextButton = document.getElementById('start-custom-text-button');
+        const cancelCustomTextButton = document.getElementById('cancel-custom-text-button');
+        
+        const shopModal = document.getElementById('shop-modal');
+        const shopCoinsDisplay = document.getElementById('shop-coins-display');
+        const shopItemsContainer = document.getElementById('shop-items');
+        const closeShopButton = document.getElementById('close-shop-button');
+
+        const plazaModal = document.getElementById('plaza-modal');
+        const plazaCoinsDisplay = document.getElementById('plaza-coins-display');
+        const plazaItemsContainer = document.getElementById('plaza-items');
+        const closePlazaButton = document.getElementById('close-plaza-button');
+        
+        // Yeni eklenenler: Özel mesaj kutucuğu için elementler
+        const customAlertModal = document.getElementById('custom-alert-modal');
+        const customAlertTitle = document.getElementById('custom-alert-title');
+        const customAlertMessage = document.getElementById('custom-alert-message');
+        const customAlertButtons = document.getElementById('custom-alert-buttons');
+
+        // Yeni eklenenler: BlockTable için elementler
+        const blockTableButton = document.getElementById('block-table-button');
+        const blockTableModal = document.getElementById('block-table-modal');
+        const closeBlockTableButton = document.getElementById('close-block-table-button');
+        const showBlockTableFromResultsButton = document.getElementById('show-block-table-from-results');
+        const blockTableWPM = document.getElementById('block-table-wpm');
+        const blockTableAccuracy = document.getElementById('block-table-accuracy');
+        const blockTableCorrectChars = document.getElementById('block-table-correct-chars');
+        const blockTableIncorrectChars = document.getElementById('block-table-incorrect-chars');
+        const blockTableCoins = document.getElementById('block-table-coins');
+
+        const texts = [
+            "The quick brown fox jumps over the lazy dog. A journey of a thousand miles begins with a single step. The only way to do great work is to love what you do. The future belongs to those who believe in the beauty of their dreams.",
+            "In a world where information is abundant, curiosity is the compass that guides us. It is the driving force behind all innovation and discovery, pushing the boundaries of what is possible and leading us to new horizons.",
+            "The art of storytelling is one of the oldest and most powerful forms of communication. It allows us to share experiences, build empathy, and preserve history for future generations. A well-told story can change minds and inspire action.",
+            "Technology has transformed our lives in countless ways, from the way we work to how we connect with others. While it offers incredible opportunities, it also presents new challenges that require careful consideration and ethical reflection.",
+            "The human mind is a complex and fascinating thing. It has the capacity for great creativity, deep emotion, and logical reasoning. Understanding how it works can help us improve our own lives and better connect with others."
+        ];
+        
+        let currentText = "";
+        let words = [];
+        let currentWordIndex = 0;
+        let correctChars = 0;
+        let incorrectChars = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let isTyping = false;
+        let isTimedMode = false;
+        let timerSeconds = 0;
+        let totalCoins = 0;
+        
+        const shopItems = [
+            { id: 'default', name: "Standard Block", cost: 0, style: { backgroundColor: '#61afef' }, owned: true },
+            { id: 'red', name: "Red Block", cost: 5, style: { backgroundColor: '#e06c75' }, owned: false },
+            { id: 'green', name: "Green Block", cost: 10, style: { backgroundColor: '#98c379' }, owned: false },
+            { id: 'yellow', name: "Yellow Block", cost: 15, style: { backgroundColor: '#e5c07b' }, owned: false },
+            { id: 'purple', name: "Purple Block", cost: 20, style: { backgroundColor: '#c678dd' }, owned: false },
+            { id: 'duck', name: "Duck", cost: 50, style: { backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="80" fill="white">🦆</text></svg>')` }, owned: false },
+            { id: 'cat', name: "Cat", cost: 50, style: { backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="80" fill="white">🐱</text></svg>')` }, owned: false },
+            { id: 'star', name: "Star", cost: 60, style: { backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="80" fill="white">⭐</text></svg>')` }, owned: false },
+            { id: 'car', name: "Car", cost: 70, style: { backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="80" fill="white">🚗</text></svg>')` }, owned: false },
+            { id: 'ghost', name: "Ghost", cost: 80, style: { backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="80" fill="white">👻</text></svg>')` }, owned: false },
+            { id: 'rocket', name: "Rocket", cost: 90, style: { backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="80" fill="white">🚀</text></svg>')` }, owned: false },
+            { id: 'heart', name: "Heart", cost: 100, style: { backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="80" fill="white">❤️</text></svg>')` }, owned: false },
+            { id: 'crown', name: "Crown", cost: 120, style: { backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="80" fill="white">👑</text></svg>')` }, owned: false },
+            { id: 'bomb', name: "Bomb", cost: 150, style: { backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="80" fill="white">💣</text></svg>')` }, owned: false },
+            { id: 'diamond', name: "Diamond", cost: 200, style: { backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="80" fill="white">💎</text></svg>')` }, owned: false }
+        ];
+
+        let activeAvatarId = 'default';
+
+        function getRandomText() {
+            return texts[Math.floor(Math.random() * texts.length)];
+        }
+        
+        function updateBlockPosition() {
+            const gameAreaWidth = gameArea.offsetWidth;
+            const numWords = words.length;
+            const blockPosition = (currentWordIndex / numWords) * gameAreaWidth;
+            block.style.transform = `translateX(${blockPosition}px)`;
+        }
+        
+        function createObstacles() {
+            const existingObstacles = document.querySelectorAll('.obstacle');
+            existingObstacles.forEach(obs => obs.remove());
+
+            const gameAreaWidth = gameArea.offsetWidth;
+            const numWords = words.length;
+
+            if (numWords > 1) {
+                for (let i = 1; i < numWords; i++) {
+                    const obstacle = document.createElement('div');
+                    obstacle.classList.add('obstacle');
+                    const position = (i / numWords) * gameAreaWidth;
+                    obstacle.style.left = `${position}px`;
+                    gameArea.appendChild(obstacle);
+                }
+            }
+        }
+
+        function resetGame() {
+            currentWordIndex = 0;
+            correctChars = 0;
+            incorrectChars = 0;
+            startTime = null;
+            isTyping = false;
+            clearInterval(timerInterval);
+            timerSeconds = 0;
+            textInput.value = '';
+            wpmDisplay.textContent = 'WPM: 0';
+            accuracyDisplay.textContent = 'Accuracy: 100%';
+            coinsDisplay.textContent = `Coins: ${totalCoins}`;
+            
+            if (isTimedMode) {
+                timerDisplay.textContent = 'Time: 60s';
+            } else {
+                timerDisplay.textContent = 'Time: 0s';
+            }
+            
+            textInput.disabled = false;
+            textInput.focus();
+            
+            block.style.transform = 'translateX(0px)';
+            
+            displayWords();
+            createObstacles();
+            resultModal.style.display = 'none';
+            // Oyun başladığında BlockTable'ı güncelle
+            updateBlockTable();
+        }
+
+        function displayWords() {
+            textDisplay.innerHTML = '';
+            const fragment = document.createDocumentFragment();
+            words.forEach((word, index) => {
+                const wordSpan = document.createElement('span');
+                wordSpan.textContent = word + ' ';
+                wordSpan.id = 'word-' + index;
+                fragment.appendChild(wordSpan);
+            });
+            textDisplay.appendChild(fragment);
+            const currentWordElement = document.getElementById('word-' + currentWordIndex);
+            if (currentWordElement) {
+                currentWordElement.classList.add('current');
+            }
+        }
+        
+        function calculateWPM() {
+            if (!startTime || !isTyping || timerSeconds === 0) return;
+            const elapsedTimeInMinutes = timerSeconds / 60;
+            const typedWordsCount = correctChars / 5;
+            const wpm = Math.round(typedWordsCount / elapsedTimeInMinutes);
+            wpmDisplay.textContent = `WPM: ${wpm || 0}`; 
+        }
+        
+        function calculateAccuracy() {
+            const totalChars = correctChars + incorrectChars;
+            if (totalChars === 0) return 100;
+            return Math.round((correctChars / totalChars) * 100);
+        }
+
+        function endGame() {
+            isTyping = false;
+            clearInterval(timerInterval);
+            textInput.disabled = true;
+            
+            const finalWPMValue = Math.round((correctChars / 5) / (timerSeconds / 60));
+            const finalAccuracyValue = calculateAccuracy();
+            
+            const earnedCoins = currentWordIndex;
+            
+            finalWPM.textContent = `WPM: ${finalWPMValue}`;
+            finalAccuracy.textContent = `Accuracy: ${finalAccuracyValue}%`;
+            coinsEarned.textContent = `Coins Earned: ${earnedCoins}`;
+            coinsDisplay.textContent = `Coins: ${totalCoins}`;
+            resultModal.style.display = 'flex';
+        }
+        
+        function startTimer() {
+            if (!isTimedMode) {
+                timerInterval = setInterval(() => {
+                    timerSeconds++;
+                    timerDisplay.textContent = `Time: ${timerSeconds}s`;
+                    calculateWPM();
+                    updateBlockTable(); // Her saniye BlockTable'ı güncelle
+                }, 1000);
+            } else {
+                let timeLeft = 60;
+                timerDisplay.textContent = `Time: ${timeLeft}s`;
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    timerSeconds = 60 - timeLeft;
+                    timerDisplay.textContent = `Time: ${timeLeft}s`;
+                    if (timeLeft <= 0) {
+                        endGame();
+                    } else {
+                        calculateWPM();
+                        updateBlockTable(); // Her saniye BlockTable'ı güncelle
+                    }
+                }, 1000);
+            }
+        }
+
+        function checkInput(e) {
+            if (!isTyping) {
+                isTyping = true;
+                startTime = new Date();
+                startTimer();
+            }
+
+            const inputValue = textInput.value;
+            const currentWordElement = document.getElementById('word-' + currentWordIndex);
+            if (!currentWordElement) return;
+
+            const currentWord = words[currentWordIndex];
+
+            let coloredHtml = '';
+            for (let i = 0; i < currentWord.length; i++) {
+                if (i < inputValue.length) {
+                    if (inputValue[i] === currentWord[i]) {
+                        coloredHtml += `<span class="correct">${currentWord[i]}</span>`;
+                    } else {
+                        coloredHtml += `<span class="incorrect">${currentWord[i]}</span>`;
+                    }
+                } else {
+                    coloredHtml += currentWord[i];
+                }
+            }
+            currentWordElement.innerHTML = coloredHtml + ' ';
+
+            if (e.data === ' ') {
+                const typedWord = inputValue.trim();
+                
+                if (typedWord === currentWord) {
+                    correctChars += currentWord.length + 1;
+                    
+                    currentWordElement.classList.remove('current');
+                    currentWordElement.classList.add('correct');
+                    
+                    totalCoins += 1;
+                    coinsDisplay.textContent = `Coins: ${totalCoins}`;
+                    
+                    currentWordIndex++;
+                    textInput.value = '';
+                    updateBlockPosition();
+
+                    const nextWordElement = document.getElementById('word-' + currentWordIndex);
+                    if (nextWordElement) {
+                        nextWordElement.classList.add('current');
+                    } else {
+                        if (!isTimedMode) {
+                            currentText = getRandomText();
+                            words = currentText.split(' ');
+                            currentWordIndex = 0;
+                            displayWords();
+                            createObstacles();
+                        } else {
+                            endGame();
+                        }
+                    }
+                } else {
+                     incorrectChars += inputValue.length;
+                     textInput.value = '';
+                }
+            } else {
+                let newCorrectChars = 0;
+                let newIncorrectChars = 0;
+                const fullTypedText = words.slice(0, currentWordIndex).join(' ') + (currentWordIndex > 0 ? ' ' : '') + inputValue;
+                const fullOriginalText = words.slice(0, currentWordIndex).join(' ') + (currentWordIndex > 0 ? ' ' : '') + words[currentWordIndex];
+                
+                for(let i = 0; i < fullTypedText.length; i++){
+                    if(fullTypedText[i] === fullOriginalText[i]){
+                        newCorrectChars++;
+                    } else {
+                        newIncorrectChars++;
+                    }
+                }
+                correctChars = newCorrectChars;
+                incorrectChars = newIncorrectChars;
+            }
+            
+            accuracyDisplay.textContent = `Accuracy: ${calculateAccuracy()}%`;
+            updateBlockTable(); // Her tuş vuruşunda BlockTable'ı güncelle
+        }
+
+        // Yeni eklenen fonksiyon: Özel mesaj kutusu
+        function showCustomAlert(title, message, buttons) {
+            customAlertTitle.textContent = title;
+            customAlertMessage.textContent = message;
+            customAlertButtons.innerHTML = '';
+            
+            buttons.forEach(btnInfo => {
+                const button = document.createElement('button');
+                button.textContent = btnInfo.text;
+                button.classList.add('button');
+                button.addEventListener('click', () => {
+                    if (btnInfo.action) {
+                        btnInfo.action();
+                    }
+                    closeCustomAlert();
+                });
+                customAlertButtons.appendChild(button);
+            });
+            
+            customAlertModal.style.display = 'flex';
+        }
+
+        function closeCustomAlert() {
+            customAlertModal.style.display = 'none';
+        }
+
+        // Yeni eklenen fonksiyon: BlockTable'ı güncelleme
+        function updateBlockTable() {
+            blockTableWPM.textContent = wpmDisplay.textContent.split(': ')[1];
+            blockTableAccuracy.textContent = accuracyDisplay.textContent.split(': ')[1];
+            blockTableCorrectChars.textContent = correctChars;
+            blockTableIncorrectChars.textContent = incorrectChars;
+            blockTableCoins.textContent = totalCoins;
+        }
+
+        function populateShop() {
+            shopItemsContainer.innerHTML = '';
+            shopItems.forEach(item => {
+                if(item.owned) return;
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('shop-item');
+                if (totalCoins < item.cost) {
+                    itemDiv.classList.add('disabled');
+                }
+                
+                let avatarStyle = '';
+                if(item.style.backgroundImage){
+                    avatarStyle = `background-image: ${item.style.backgroundImage};`;
+                } else {
+                    avatarStyle = `background-color: ${item.style.backgroundColor};`;
+                }
+
+                itemDiv.innerHTML = `
+                    <div class="avatar-preview" style="${avatarStyle}"></div>
+                    <h3>${item.name}</h3>
+                    <p>Cost: ${item.cost} BlockCoin</p>
+                `;
+                itemDiv.addEventListener('click', () => {
+                    if (totalCoins < item.cost) {
+                        showCustomAlert('Error', 'You do not have enough BlockCoin!', [{text: 'OK', action: () => {}}]);
+                    } else {
+                        showCustomAlert('Confirm Purchase', `Are you sure you want to buy the ${item.name}?`, [
+                            { text: 'Yes', action: () => {
+                                totalCoins -= item.cost;
+                                item.owned = true;
+                                coinsDisplay.textContent = `Coins: ${totalCoins}`;
+                                shopCoinsDisplay.textContent = totalCoins;
+                                populateShop();
+                                showCustomAlert('Success', 'Purchase successful! You can now equip it from the Block Plaza.', [{text: 'OK', action: () => {}}]);
+                            }},
+                            { text: 'No', action: () => {} }
+                        ]);
+                    }
+                });
+                shopItemsContainer.appendChild(itemDiv);
+            });
+        }
+
+        function populatePlaza() {
+            plazaItemsContainer.innerHTML = '';
+            shopItems.filter(item => item.owned).forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('plaza-item');
+                if(item.id === activeAvatarId) {
+                    itemDiv.classList.add('active');
+                }
+
+                let avatarStyle = '';
+                if(item.style.backgroundImage){
+                    avatarStyle = `background-image: ${item.style.backgroundImage};`;
+                } else {
+                    avatarStyle = `background-color: ${item.style.backgroundColor};`;
+                }
+
+                itemDiv.innerHTML = `
+                    <div class="avatar-preview" style="${avatarStyle}"></div>
+                    <h3>${item.name}</h3>
+                `;
+                itemDiv.addEventListener('click', () => {
+                    activeAvatarId = item.id;
+                    block.style.backgroundColor = item.style.backgroundColor || '';
+                    block.style.backgroundImage = item.style.backgroundImage || '';
+                    populatePlaza();
+                });
+                plazaItemsContainer.appendChild(itemDiv);
+            });
+        }
+
+        function setupGame(text) {
+            currentText = text;
+            words = currentText.split(' ');
+            resetGame();
+        }
+        
+        // Event Listeners
+        textInput.addEventListener('input', checkInput);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                resetGame();
+            }
+        });
+
+        restartButton.addEventListener('click', resetGame);
+        
+        modeButton.addEventListener('click', () => {
+            modeModal.style.display = 'flex';
+        });
+        
+        endlessModeButton.addEventListener('click', () => {
+            isTimedMode = false;
+            modeModal.style.display = 'none';
+            setupGame(getRandomText());
+        });
+        
+        timedModeButton.addEventListener('click', () => {
+            isTimedMode = true;
+            modeModal.style.display = 'none';
+            setupGame(getRandomText());
+        });
+        
+        restartFromResults.addEventListener('click', () => {
+             resultModal.style.display = 'none';
+             modeModal.style.display = 'flex';
+        });
+        
+        customTextButton.addEventListener('click', () => {
+            customTextModal.style.display = 'flex';
+        });
+        
+        startCustomTextButton.addEventListener('click', () => {
+            const customText = customTextInput.value;
+            if (customText.trim() !== '') {
+                setupGame(customText);
+                customTextModal.style.display = 'none';
+            }
+        });
+        
+        cancelCustomTextButton.addEventListener('click', () => {
+            customTextModal.style.display = 'none';
+            customTextInput.value = '';
+        });
+
+        shopButton.addEventListener('click', () => {
+            shopCoinsDisplay.textContent = totalCoins;
+            populateShop();
+            shopModal.style.display = 'flex';
+        });
+
+        closeShopButton.addEventListener('click', () => {
+            shopModal.style.display = 'none';
+        });
+
+        plazaButton.addEventListener('click', () => {
+            plazaCoinsDisplay.textContent = totalCoins;
+            populatePlaza();
+            plazaModal.style.display = 'flex';
+        });
+
+        closePlazaButton.addEventListener('click', () => {
+            plazaModal.style.display = 'none';
+        });
+
+        // BlockTable için yeni event listener'lar
+        blockTableButton.addEventListener('click', () => {
+            updateBlockTable();
+            blockTableModal.style.display = 'flex';
+        });
+        closeBlockTableButton.addEventListener('click', () => {
+            blockTableModal.style.display = 'none';
+        });
+        showBlockTableFromResultsButton.addEventListener('click', () => {
+            blockTableModal.style.display = 'flex';
+        });
+
+        // Initial setup
+        window.onload = () => {
+            modeModal.style.display = 'flex';
+            textInput.disabled = true;
+        };
+    </script>
+</body>
+</html>
